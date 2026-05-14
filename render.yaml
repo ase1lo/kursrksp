@@ -1,0 +1,22 @@
+services:
+  - type: web
+    name: corplink-messenger
+    runtime: docker
+    plan: starter
+    envVars:
+      - key: APP_ENV
+        value: production
+      - key: PORT
+        value: 8080
+      - key: DATABASE_URL
+        value: sqlite:////app/data/messenger.db
+      - key: TOKEN_TTL_SECONDS
+        value: 86400
+      - key: CORS_ORIGIN
+        value: "*"
+      - key: SECRET_KEY
+        generateValue: true
+    disk:
+      name: messenger-data
+      mountPath: /app/data
+      sizeGB: 1
