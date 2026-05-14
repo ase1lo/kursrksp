@@ -72,4 +72,3 @@ render.yaml             Cloud deployment blueprint
 - [UML и архитектура](docs/uml.md)
 - [12 факторов](docs/12-factor.md)
 - [Развертывание](docs/deployment.md)
-- [Презентация PPTX](docs/presentation/corplink-messenger.pptx)

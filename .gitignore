@@ -8,3 +8,5 @@ data/
 dist/
 node_modules/
 .env
+docs/presentation/*.pptx
+docs/presentation/*.pdf
