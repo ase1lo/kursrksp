@@ -1,0 +1,10 @@
+[project]
+name = "corplink-messenger"
+version = "1.0.0"
+description = "Educational fullstack corporate messenger with channels, integrations, RBAC, fuzzing, Docker, and CI."
+requires-python = ">=3.11"
+dependencies = []
+
+[tool.coverage-gate]
+target = "100%"
+scope = "server core modules"
