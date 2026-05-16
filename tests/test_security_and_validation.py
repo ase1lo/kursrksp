@@ -1,6 +1,11 @@
 import json
+import sys
 import tempfile
+import types
 import unittest
+import builtins
+from datetime import datetime, timezone
+from unittest.mock import patch
 
 from server.config import Settings
 from server.db import Database, row_to_dict
@@ -24,7 +29,7 @@ class SecurityAndValidationTest(unittest.TestCase):
         settings = Settings.from_env(
             {
                 "APP_ENV": "production",
-                "DATABASE_URL": "sqlite:///data/app.db",
+                "DATABASE_URL": "postgresql://messenger:messenger@db:5432/corplink",
                 "SECRET_KEY": "secret",
                 "PORT": "9090",
                 "TOKEN_TTL_SECONDS": "12",
@@ -37,7 +42,19 @@ class SecurityAndValidationTest(unittest.TestCase):
 
     def test_database_rejects_unsupported_url(self):
         with self.assertRaises(ValueError):
-            Database("postgres://example")
+            Database("mysql://example")
+
+    def test_postgres_adapter_requires_psycopg(self):
+        real_import = builtins.__import__
+
+        def import_without_psycopg(name, *args, **kwargs):
+            if name == "psycopg" or name == "psycopg.rows":
+                raise ImportError("missing psycopg")
+            return real_import(name, *args, **kwargs)
+
+        with patch("builtins.__import__", side_effect=import_without_psycopg):
+            with self.assertRaises(RuntimeError):
+                Database("postgresql://messenger:messenger@db:5432/corplink")
 
     def test_database_accepts_file_url(self):
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -50,6 +67,71 @@ class SecurityAndValidationTest(unittest.TestCase):
         db.execute("CREATE TABLE sample (id INTEGER, active INTEGER, metadata_json TEXT)")
         db.execute("INSERT INTO sample VALUES (1, 1, ?)", (json.dumps({"a": 1}),))
         self.assertEqual(row_to_dict(db.one("SELECT * FROM sample")), {"id": 1, "active": True, "metadata": {"a": 1}})
+        self.assertEqual(row_to_dict({"created_at": datetime(2026, 5, 16, tzinfo=timezone.utc)}), {"created_at": "2026-05-16T00:00:00+00:00"})
+
+    def test_postgres_adapter_translates_sql_and_returns_ids(self):
+        class FakeIntegrityError(Exception):
+            pass
+
+        class FakeCursor:
+            def __init__(self, row=None, rows=None):
+                self.row = row or {"id": 51}
+                self.rows = rows or [self.row]
+
+            def fetchone(self):
+                return self.row
+
+            def fetchall(self):
+                return self.rows
+
+        class FakeConnection:
+            def __init__(self):
+                self.calls = []
+                self.commits = 0
+                self.rollbacks = 0
+                self.closed = False
+
+            def execute(self, sql, parameters=()):
+                self.calls.append((sql, parameters))
+                if "FAIL" in sql:
+                    raise FakeIntegrityError("duplicate")
+                return FakeCursor()
+
+            def commit(self):
+                self.commits += 1
+
+            def rollback(self):
+                self.rollbacks += 1
+
+            def close(self):
+                self.closed = True
+
+        fake_connection = FakeConnection()
+        fake_psycopg = types.SimpleNamespace(
+            IntegrityError=FakeIntegrityError,
+            connect=lambda database_url, row_factory=None: fake_connection,
+        )
+        fake_rows = types.SimpleNamespace(dict_row=object())
+
+        with patch.dict(sys.modules, {"psycopg": fake_psycopg, "psycopg.rows": fake_rows}):
+            db = Database("postgresql://messenger:messenger@db:5432/corplink")
+            self.assertEqual(db.driver, "postgresql")
+            db.migrate()
+            self.assertTrue(any("SERIAL PRIMARY KEY" in call[0] for call in fake_connection.calls))
+            db.execute("INSERT OR IGNORE INTO channel_members (channel_id, user_id, member_role) VALUES (?, ?, ?)", (1, 2, "member"))
+            self.assertIn("ON CONFLICT DO NOTHING", fake_connection.calls[-1][0])
+            self.assertIn("%s", fake_connection.calls[-1][0])
+            self.assertEqual(db.one("SELECT * FROM users WHERE id = ?", (1,)), {"id": 51})
+            self.assertEqual(db.all("SELECT * FROM users WHERE role = ?", ("admin",)), [{"id": 51}])
+            self.assertEqual(db.insert("INSERT INTO users (email) VALUES (?)", ("a@b.test",)), 51)
+            self.assertIn("RETURNING id", fake_connection.calls[-1][0])
+            with self.assertRaises(Exception):
+                db.execute("FAIL")
+            with self.assertRaises(Exception):
+                db.insert("FAIL")
+            self.assertEqual(fake_connection.rollbacks, 2)
+            db.close()
+            self.assertTrue(fake_connection.closed)
 
     def test_password_hash_and_verify(self):
         stored = hash_password("StrongPass123", b"1234567890abcdef")

@@ -6,7 +6,7 @@
 
 - Backend: Python 3.11+, standard library HTTP/API layer.
 - Frontend: Vanilla HTML/CSS/JS SPA.
-- Database: SQLite как реляционная БД через `DATABASE_URL`.
+- Database: PostgreSQL как production-БД через `DATABASE_URL`.
 - Auth: PBKDF2-HMAC-SHA256 password hashing + HMAC bearer tokens.
 - Tests: `unittest`, integration tests, deterministic fuzzing.
 - Coverage: собственный `scripts/coverage_gate.py`, 100% line coverage по `server/`.
@@ -15,7 +15,7 @@
 ## Быстрый старт
 
 ```bash
-python3 -m server.httpd
+docker compose up --build
 ```
 
 Открыть `http://localhost:8080`.
@@ -28,6 +28,7 @@ python3 -m server.httpd
 ## Запуск проверок
 
 ```bash
+pip install -r requirements.txt
 python3 -m unittest discover -v
 python3 scripts/coverage_gate.py
 docker build -t corplink-messenger .
@@ -49,7 +50,7 @@ scripts/coverage_gate.py 100% coverage gate
 docs/                   Domain analysis, UML, 12-factor, deployment
 .github/workflows/ci.yml GitHub Actions CI
 Dockerfile              Production container
-docker-compose.yml      Local container run with persistent volume
+docker-compose.yml      Local app + PostgreSQL runtime
 render.yaml             Cloud deployment blueprint
 ```
 

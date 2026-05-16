@@ -3,7 +3,7 @@
 | Фактор | Реализация в проекте |
 | --- | --- |
 | Codebase | Один Git-репозиторий для backend, frontend, tests, docs, Docker и CI. |
-| Dependencies | Нулевые внешние runtime-зависимости; Python standard library. |
+| Dependencies | Runtime-зависимость `psycopg[binary]` зафиксирована в `requirements.txt`; остальная логика на Python standard library. |
 | Config | `APP_ENV`, `DATABASE_URL`, `SECRET_KEY`, `PORT`, `TOKEN_TTL_SECONDS`, `CORS_ORIGIN`. |
 | Backing services | БД подключается как ресурс через `DATABASE_URL`. |
 | Build, release, run | Dockerfile разделяет образ и запуск; release меняется через env. |
@@ -20,7 +20,7 @@
 ```bash
 APP_ENV=production
 PORT=8080
-DATABASE_URL=sqlite:////app/data/messenger.db
+DATABASE_URL=postgresql://messenger:messenger@db:5432/corplink
 SECRET_KEY=<strong-random-secret>
 TOKEN_TTL_SECONDS=86400
 CORS_ORIGIN=*

@@ -16,7 +16,7 @@ class Settings:
         source = env or os.environ
         return cls(
             app_env=source.get("APP_ENV", "development"),
-            database_url=source.get("DATABASE_URL", "sqlite:///messenger.db"),
+            database_url=source.get("DATABASE_URL", "postgresql://messenger:messenger@localhost:5432/corplink"),
             secret_key=source.get("SECRET_KEY", "dev-secret-change-me"),
             port=int(source.get("PORT", "8080")),
             token_ttl_seconds=int(source.get("TOKEN_TTL_SECONDS", "86400")),

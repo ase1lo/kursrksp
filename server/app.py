@@ -266,8 +266,8 @@ class MessengerApp:
         clean_role = validate_role(role)
         password_hash = hash_password(password)
         user_id = self.db.insert(
-            "INSERT INTO users (email, name, password_hash, role, active) VALUES (?, ?, ?, ?, 1)",
-            (normalized_email, clean_name, password_hash, clean_role),
+            "INSERT INTO users (email, name, password_hash, role, active) VALUES (?, ?, ?, ?, ?)",
+            (normalized_email, clean_name, password_hash, clean_role, True),
         )
         return row_to_dict(self.db.require_one("SELECT * FROM users WHERE id = ?", (user_id,), "user"))
 
@@ -283,7 +283,7 @@ class MessengerApp:
             parameters.append(validate_role(payload["role"]))
         if "active" in payload:
             updates.append("active = ?")
-            parameters.append(1 if validate_bool(payload["active"], "active") else 0)
+            parameters.append(validate_bool(payload["active"], "active"))
         if not updates:
             raise ValidationError("No user fields to update")
         parameters.append(user_id)
@@ -294,7 +294,7 @@ class MessengerApp:
         clean_slug = validate_slug(slug)
         clean_name = validate_text(name, "name", 2, 80)
         clean_description = validate_text(description or "No description", "description", 2, 240)
-        private = 1 if validate_bool(is_private, "is_private") else 0
+        private = validate_bool(is_private, "is_private")
         channel_id = self.db.insert(
             "INSERT INTO channels (slug, name, description, is_private, created_by) VALUES (?, ?, ?, ?, ?)",
             (clean_slug, clean_name, clean_description, private, actor["id"]),
@@ -313,7 +313,7 @@ class MessengerApp:
             parameters.append(validate_text(payload["description"], "description", 2, 240))
         if "is_private" in payload:
             updates.append("is_private = ?")
-            parameters.append(1 if validate_bool(payload["is_private"], "is_private") else 0)
+            parameters.append(validate_bool(payload["is_private"], "is_private"))
         if not updates:
             raise ValidationError("No channel fields to update")
         parameters.append(channel_id)
@@ -376,7 +376,7 @@ class MessengerApp:
         clean_enabled = validate_bool(enabled, "enabled")
         integration_id = self.db.insert(
             "INSERT INTO integrations (channel_id, name, type, config_json, enabled, created_by) VALUES (?, ?, ?, ?, ?, ?)",
-            (channel_id, clean_name, clean_type, json.dumps(clean_config, sort_keys=True), 1 if clean_enabled else 0, actor["id"]),
+            (channel_id, clean_name, clean_type, json.dumps(clean_config, sort_keys=True), clean_enabled, actor["id"]),
         )
         return row_to_dict(self.db.require_one("SELECT * FROM integrations WHERE id = ?", (integration_id,), "integration"))
 
@@ -392,7 +392,7 @@ class MessengerApp:
             parameters.append(json.dumps(parse_config(payload["config"]), sort_keys=True))
         if "enabled" in payload:
             updates.append("enabled = ?")
-            parameters.append(1 if validate_bool(payload["enabled"], "enabled") else 0)
+            parameters.append(validate_bool(payload["enabled"], "enabled"))
         if not updates:
             return current
         parameters.append(integration_id)

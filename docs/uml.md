@@ -6,7 +6,7 @@
 
 - Presentation layer: SPA в `client/`, работает в браузере и обращается к `/api`.
 - Application layer: Python backend в `server/`, маршрутизация, auth, RBAC, валидация и бизнес-правила.
-- Data layer: реляционная SQLite БД, подключаемая через `DATABASE_URL`.
+- Data layer: реляционная PostgreSQL БД, подключаемая через `DATABASE_URL`.
 
 ## Component Diagram
 
@@ -166,7 +166,7 @@ sequenceDiagram
     participant SPA as Browser SPA
     participant API as MessengerApp
     participant Auth as Security
-    participant DB as SQLite
+    participant DB as PostgreSQL
 
     User->>SPA: email + password
     SPA->>API: POST /api/auth/login
