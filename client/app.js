@@ -52,8 +52,8 @@ function esc(value) {
 }
 
 async function bootstrap() {
+  render();
   if (!state.token) {
-    render();
     return;
   }
   try {

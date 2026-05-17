@@ -40,6 +40,19 @@ docker build -t corplink-messenger .
 docker compose up --build
 ```
 
+Smoke-проверка после старта:
+
+```bash
+curl -i http://127.0.0.1:8080/
+curl -i http://127.0.0.1:8080/api/health
+```
+
+Если браузер показывает пустой экран после перехода с SQLite на PostgreSQL, очистите старый `localStorage` для `localhost:8080` или откройте DevTools Console и выполните:
+
+```js
+localStorage.clear()
+```
+
 ## Структура проекта
 
 ```text

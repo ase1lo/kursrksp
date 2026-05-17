@@ -57,11 +57,14 @@ class MessengerRequestHandler(BaseHTTPRequestHandler):
             self.app = MessengerApp(Settings.from_env())
         length = int(self.headers.get("Content-Length", "0"))
         response = self.app.handle(self.command, self.path, dict(self.headers), self.rfile.read(length))
+        data = response.body()
         self.send_response(response.status)
         for key, value in response.headers.items():
             self.send_header(key, value)
+        self.send_header("Content-Length", str(len(data)))
+        self.send_header("Connection", "close")
         self.end_headers()
-        self.wfile.write(response.body())
+        self.wfile.write(data)
 
     def _static(self):
         target = resolve_static_target(self.path)
