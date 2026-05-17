@@ -127,10 +127,10 @@ function authView() {
           <h2>Вход</h2>
           ${flash()}
           <label>Email
-            <input name="email" type="email" value="admin@corp.test" autocomplete="username" required>
+            <input name="email" type="email" autocomplete="username" required>
           </label>
           <label>Пароль
-            <input name="password" type="password" value="AdminPass123" autocomplete="current-password" required>
+            <input name="password" type="password" autocomplete="current-password" required>
           </label>
           <div class="toolbar">
             <button type="submit">Войти</button>
