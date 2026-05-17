@@ -6,10 +6,11 @@ import unittest
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
+EXCLUDED_FILES = {"__init__.py", "httpd.py"}
 SOURCE_FILES = [
     path
     for path in sorted((ROOT / "server").glob("*.py"))
-    if path.name != "httpd.py"
+    if path.name not in EXCLUDED_FILES
 ]
 
 
