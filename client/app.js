@@ -51,6 +51,20 @@ function esc(value) {
     .replaceAll('"', "&quot;");
 }
 
+function formatTimestamp(value) {
+  if (!value) return "";
+  const normalized = String(value).includes("T") ? String(value) : String(value).replace(" ", "T");
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) return String(value);
+  return new Intl.DateTimeFormat("ru-RU", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(date);
+}
+
 async function bootstrap() {
   render();
   if (!state.token) {
@@ -211,11 +225,12 @@ function messageColumn() {
 
 function messageItem(message) {
   const canEdit = message.author_id === state.user.id || ["admin", "moderator"].includes(state.user.role);
+  const createdAt = formatTimestamp(message.created_at);
   return `
     <article class="message">
       <div class="message-head">
         <strong>${esc(message.author_name)}</strong>
-        <span>${esc(message.created_at)}${message.edited ? " · edited" : ""}</span>
+        <span title="${esc(message.created_at)}">${esc(createdAt)}${message.edited ? " · edited" : ""}</span>
       </div>
       <div class="message-body">${esc(message.body)}</div>
       ${canEdit ? `<div class="toolbar"><button class="ghost" data-action="delete-message" data-id="${message.id}">Удалить</button></div>` : ""}
