@@ -11,6 +11,13 @@ const state = {
 };
 
 const app = document.querySelector("#app");
+const sessionErrors = new Set([
+  "Authorization header must use Bearer token",
+  "Token has expired",
+  "Token is malformed",
+  "Token signature is invalid",
+  "user not found",
+]);
 
 function headers() {
   const base = { "Content-Type": "application/json" };
@@ -41,6 +48,21 @@ function setError(message) {
   state.error = message;
   state.notice = "";
   render();
+}
+
+function clearSession() {
+  localStorage.removeItem("token");
+  state.token = "";
+  state.user = null;
+  state.users = [];
+  state.channels = [];
+  state.messages = [];
+  state.integrations = [];
+  state.selectedChannelId = null;
+}
+
+function isSessionError(error) {
+  return sessionErrors.has(error.message);
 }
 
 function esc(value) {
@@ -75,9 +97,13 @@ async function bootstrap() {
     state.user = me.user;
     await refreshWorkspace();
   } catch (error) {
-    localStorage.removeItem("token");
-    state.token = "";
-    state.user = null;
+    clearSession();
+    if (isSessionError(error)) {
+      state.error = "";
+      state.notice = "";
+      render();
+      return;
+    }
     setError(error.message);
   }
 }
@@ -340,9 +366,7 @@ async function onClick(action, node) {
       setNotice("Тестовые данные созданы");
     }
     if (action === "logout") {
-      localStorage.removeItem("token");
-      state.token = "";
-      state.user = null;
+      clearSession();
       render();
     }
     if (action === "reload") {
